@@ -17,9 +17,6 @@ app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 connect_db(app)
 db.create_all()
 
-# ************************************************************
-# REDIRECT FROM "/" WILL BE FIXED LATER
-# ************************************************************
 @app.route('/')
 def homepage():
     '''Redirect to list of users'''
@@ -152,4 +149,4 @@ def do_deletePost(post_id):
 
 @app.errorhandler(404)
 def page_err_404(error):
-    return render_template('404-page.html'),400
+    return render_template('404-page.html', err=error),404
