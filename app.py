@@ -58,7 +58,7 @@ def do_newUser():
 def userDetails(user_id):
     '''Show information about the given user. Have a button to get to their edit page, and to delete the user'''
     user = User.query.get_or_404(user_id)
-    return render_template('user-page.html', user=user)
+    return render_template('profile.html', user=user)
 
 @app.route('/users/<int:user_id>/edit')
 def editUser(user_id):
