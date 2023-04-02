@@ -24,9 +24,11 @@ class User(db.Model):
         return f'{self.first_name} {self.last_name}'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    first_name = db.Column(db.String(50), nullable=False)
-    last_name = db.Column(db.String(50), nullable=False)
+    first_name = db.Column(db.Text, nullable=False)
+    last_name = db.Column(db.Text, nullable=False)
     image_url = db.Column(db.Text, nullable=False, default=DEFAULT_IMAGE_URL )
+
+    posts = db.relationship('Post', backref='user',cascade="all, delete-orphan")
 
 class Post(db.Model):
     '''Post.'''
@@ -36,10 +38,14 @@ class Post(db.Model):
         p = self
         return f'<Post id={p.id}, title={p.title}, content={p.content}, created_at={p.created_at}, user_id={p.user_id} >'
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title = db.Column(db.String(50), nullable=False)
-    content = db.Column(db.String(200), nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    @property
+    def friendly_date(self):
+        '''Returns nicer format for date'''
+        return self.created_at.strftime("%a %b %-d  %Y, %-I:%M %p")
 
-    user = db.relationship('User', backref='posts')
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
