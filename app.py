@@ -23,7 +23,8 @@ db.create_all()
 @app.route('/')
 def homepage():
     '''Redirect to list of users'''
-    return redirect('/users')
+    recent_posts = Post.query.order_by(Post.created_at).limit(5).all()
+    return render_template('homepage.html', posts = recent_posts)
 
 @app.route('/users')
 def users_page():
@@ -35,7 +36,7 @@ def users_page():
 @app.route('/users/new')
 def newUser():
     '''Show an add form for users'''
-    return render_template('create.html')
+    return render_template('add-user.html')
 
 @app.route('/users/new', methods=['POST'])
 def do_newUser():
@@ -64,7 +65,7 @@ def userDetails(user_id):
 def editUser(user_id):
     '''Show the edit page for a user. Have a cancel button that returns to the detail page for a user, and a save button that updates the user.'''
     user = User.query.get_or_404(user_id)
-    return render_template('edit.html', user=user)
+    return render_template('edit-profile.html', user=user)
 
 @app.route('/users/<int:user_id>/edit', methods=['POST'])
 def do_editUser(user_id):
@@ -86,6 +87,69 @@ def do_editUser(user_id):
 @app.route('/users/<int:user_id>/delete', methods=['POST'])
 def do_deleteUser(user_id):
     '''Delete the user.'''
-    User.query.filter_by(id=user_id).delete()
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
     db.session.commit()
     return redirect("/users")
+
+@app.route('/users/<int:user_id>/posts/new')
+def newPost(user_id):
+    '''Show form to add a post for that user'''
+
+    user = User.query.get_or_404(user_id)
+    return render_template('add-post.html', user=user)
+
+@app.route('/users/<int:user_id>/posts/new', methods=['POST'])
+def do_newPost(user_id):
+    '''Handle add form; add post and redirect to the user detail page'''
+    t = request.form.get('title')
+    c = request.form.get('content')
+    post = Post(title=t, content=c, user_id=user_id)
+
+    db.session.add(post)
+    db.session.commit()
+
+    return redirect(f'/users/{user_id}')
+
+@app.route('/posts/<int:post_id>')
+def show_post(post_id):
+    '''Show a post. Show buttons to edit and delete the post'''
+    post = Post.query.get_or_404(post_id)
+    return render_template('post-details.html', post=post)
+
+@app.route('/posts/<int:post_id>/edit')
+def editPost(post_id):
+    '''Show form to edit a post, and to cancel (back to user page).'''
+
+    post = Post.query.get_or_404(post_id)
+    return render_template('edit-post.html', post=post)
+
+@app.route('/posts/<int:post_id>/edit', methods=['POST'])
+def do_editPost(post_id):
+    '''Handle editing of a post. Redirect back to the post view.'''
+    new_t = request.form.get('title')
+    new_c = request.form.get('content')
+    
+    post = Post.query.get_or_404(post_id)
+    post.title = new_t
+    post.content = new_c
+
+    db.session.add(post)
+    db.session.commit()
+    return redirect(f'/posts/{post_id}')
+
+@app.route('/posts/<int:post_id>/delete', methods=['POST'])
+def do_deletePost(post_id):
+    '''Delete the post.'''
+
+    # Get user_id of the post
+    user_id = list(db.session.query(Post.user_id).filter(Post.id==post_id).first())[0]
+
+    post = Post.query.get_or_404(post_id)
+    db.session.delete(post)
+    db.session.commit()
+    return redirect(f"/users/{user_id}")
+
+@app.errorhandler(404)
+def page_err_404(error):
+    return render_template('404-page.html'),400
